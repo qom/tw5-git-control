@@ -1,0 +1,19 @@
+caption: {{$:/om/images/gitsync-button}} {{$:/om/language/Buttons/GitCommit/Caption}}
+created: 20141106223056035
+description: {{$:/language/Buttons/SaveWiki/Hint}}
+modified: 20191230013021640
+tags: $:/tags/PageControls meta
+title: $:/om/ui/Buttons/gitcontrol
+type: text/vnd.tiddlywiki
+
+<$button tooltip={{$:/om/language/Buttons/GitCommit/Hint}} aria-label={{$:/om/language/Buttons/GitCommit/Caption}} class=<<tv-config-toolbar-class>> to="$:/gitcontrol">
+  <span class="tc-dirty-indicator">
+    <$list filter="[<tv-config-toolbar-icons>prefix[yes]]">
+      {{$:/om/images/gitsync-button}}
+    </$list>
+		
+    <$list filter="[<tv-config-toolbar-text>prefix[yes]]">
+      <span class="tc-btn-text"><$text text={{$:/om/language/Buttons/GitCommit/Caption}}/></span>
+    </$list>
+  </span>
+</$button>

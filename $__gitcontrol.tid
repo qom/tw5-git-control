@@ -1,0 +1,144 @@
+created: 20191230011929142
+modified: 20200118162754737
+title: $:/gitcontrol
+type: text/vnd.tiddlywiki
+version: 0.1.0
+
+\define git-status()
+<$button message="tm-git-status">
+		git status
+</$button>
+\end
+
+\define git-fetch()
+<$button message="tm-git-fetch">
+		git fetch
+</$button>
+\end
+
+\define git-pull()
+<$button message="tm-git-pull">
+		git pull
+</$button>
+\end
+
+\define git-add()
+<$button message="tm-git-add">
+	  git add
+</$button>
+\end
+
+\define git-diff()
+<$button message="tm-git-diff">
+	  git diff
+</$button>
+\end
+
+\define git-sync()
+<$button message="tm-git-sync">
+    git sync
+</$button>
+
+<$edit-text size=50 tag=input tiddler="$:/git/commitmessage" default="Enter a commit message."/>
+\end
+
+\define check-changes-on-disk()
+<$button message="tm-check-changes-on-disk">
+    check changes on disk
+</$button>
+\end
+
+\define load-from-disk()
+<$button message="tm-load-from-disk">
+    load from disk
+</$button>
+\end
+
+<!-- Begin UI layout section -->
+
+Sync status:
+
+|! Local |{{$:/git/localsyncstatus}} |
+|! Remote |{{$:/git/remotesyncstatus}} |
+
+----
+
+<!--<$gitcontrol initactions="fetch,status">-->
+<$gitcontrol initactions="status">
+
+|Update git status |<<git-status>> |
+|Fetch remote repo metadata |<<git-fetch>> |
+|Pull remote repo changes |<<git-pull>> |
+|Diff modified files |<<git-diff>> |
+|Stage files for commit |<<git-add>> |
+|Commit and push changes |<<git-sync>> |
+|Changes on disk |<<check-changes-on-disk>> <<load-from-disk>> |
+	
+</$gitcontrol>
+
+----
+
+<!-- Display section for output of git and load from disk actions -->
+
+<$list filter="[title[$:/sync/changedondisk]has[text]]">
+
+Changes on disk:
+
+  {{$:/sync/changedondisk}}
+	<$button>
+	<$action-deletetiddler $tiddler="$:/sync/changedondisk"/>
+	Clear changes on disk
+	</$button>
+</$list>
+
+<$list filter="[title[$:/git/fetchsummary]has[text]]">
+
+Fetch summary:
+
+  {{$:/git/fetchsummary}}
+	
+	<$button>
+	<$action-deletetiddler $tiddler="$:/git/fetchsummary"/>
+	Clear fetch summary
+	</$button>
+</$list>
+
+<$list filter="[title[$:/git/pullsummary]has[text]]">
+
+Pull summary:
+
+  {{$:/git/pullsummary}}
+	
+	<$button>
+	<$action-deletetiddler $tiddler="$:/git/pullsummary"/>
+	Clear pull summary
+	</$button>
+</$list>
+
+<$list filter="[title[$:/git/commitstatus]has[text]]">
+
+Commit status:
+
+  {{$:/git/commitstatus}}
+	<$button>
+	<$action-deletetiddler $tiddler="$:/git/commitstatus"/>
+	Clear Commit Status
+	</$button>
+</$list>
+
+Git status:
+
+{{$:/git/status}}
+
+<$list filter="[title[$:/git/diffresult]has[text]]">
+
+Diffs:
+
+<$button>
+	<$action-deletetiddler $tiddler="$:/git/diffresult"/>
+	Clear Diff
+</$button>	
+
+{{$:/git/diffresult}}
+	
+</$list>
