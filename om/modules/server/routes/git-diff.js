@@ -1,5 +1,5 @@
 /*\
-title: $:/om/modules/server/routes/git-sync.js
+title: $:/om/modules/server/routes/git-diff.js
 type: application/javascript
 module-type: route
 
