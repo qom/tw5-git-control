@@ -21,6 +21,7 @@ var GitControlWidget = function(parseTreeNode,options) {
 	this.initActions = [];
 	this.git = {
 		initialAction: "fetch",
+		action: {resource: "git/action", errorTiddler: "$:/git/error"},
 		status: {resource: "git/status", resultTiddler: "$:/git/status"},
 		fetch: {resource: "git/fetch", resultTiddler: "$:/git/fetchsummary"},
 		pull: {resource: "git/pull", resultTiddler: "$:/git/pullsummary"},
@@ -39,8 +40,8 @@ var GitControlWidget = function(parseTreeNode,options) {
 
 	this.initialise(parseTreeNode,options);
 	this.addEventListeners([
-		{type: "tm-git-status", handler: "handleGitStatusEvent"},
-		{type: "tm-git-fetch", handler: "handleGitFetchEvent"},
+		{type: "tm-git-status", handler: "handleGitActionEvent"},
+		{type: "tm-git-fetch", handler: "handleGitActionEvent"},
 		{type: "tm-git-pull", handler: "handleGitPullEvent"},
 		{type: "tm-git-add", handler: "handleGitAddEvent"},
 		{type: "tm-git-commit", handler: "handleGitCommitEvent"},
@@ -90,107 +91,79 @@ GitControlWidget.prototype.executeStartupActions = function() {
 		var message = "tm-git-" + action;
 		if (this.eventListeners[message]) {
 			// Execute the corresponding git message event handler
-			this.eventListeners[message]();
+			this.eventListeners[message]({type: message});
 		}
 	});
 };
 	
-/*
-Take REST resource and return the full URL
-*/
-GitControlWidget.prototype.urlOf = function(resource) {
-	return $tw.syncadaptor.host + resource;
-}
 
-/*
-Wrap with text with ``` to make wiki code block
-*/
-GitControlWidget.prototype.makeWikiTextCodeBlock = function(text, type) {
-	return "\n```" + type + "\n" + text + "\n```\n";
-}
-
-/*
-Check if object is empty
-*/
-GitControlWidget.prototype.isEmpty = function(obj) {
-	return Object.keys(obj).length === 0 && obj.constructor === Object;
-}
-
-/*
-Filter git status JSON response: 
-*/
-GitControlWidget.prototype.filterStatuses = function(gitStatus, exclude, substitution, onlyArrays) {
-	var changes = {};
-	for (const status in gitStatus) {
-		var statusName = substitution[status] ? substitution[status] : status;
-		if (gitStatus[status] instanceof Array && gitStatus[status].length > 0 && status != exclude) {
-			changes[statusName] = gitStatus[status];
-		} else if (!onlyArrays && !(gitStatus[status] instanceof Array)) {
-			changes[statusName] = gitStatus[status];
-		}
-	}
-	return changes;
-}
-
-/*
-Update git status result tiddler
-*/
-GitControlWidget.prototype.updateGitStatusResultTiddler = function(gitStatus) {
-	var exclusion = "files";
-	var statusClean = this.filterStatuses(gitStatus, exclusion, {}, false);
-	$tw.wiki.deleteTiddler(this.git.status.resultTiddler);
-	$tw.wiki.setTiddlerData(this.git.status.resultTiddler, statusClean, null);
-}
-
-/*
-Update local and remote sync status
-*/
-GitControlWidget.prototype.updateSyncStatus = function(gitStatus) {
-	
-	$tw.wiki.deleteTiddler(this.git.localSyncStatusTiddler);
-	$tw.wiki.deleteTiddler(this.git.remoteSyncStatusTiddler);
-	
-	// Local status
-	var propertyNameSubstitution = {not_added: "new"};
-	var exclusion = "files";
-	var changes = this.filterStatuses(gitStatus, exclusion, propertyNameSubstitution, true);
-
-	var localSyncSummary = [];
-	if (this.isEmpty(changes)) {
-		localSyncSummary = "No uncommitted changes.";
-	} else {
-		for (var status in changes) {
-			localSyncSummary.push(changes[status].length + " " + status);
-		}
-		localSyncSummary = localSyncSummary.join(", ") + " files.";
-	}
-
-	$tw.wiki.setText(this.git.localSyncStatusTiddler, null, null, localSyncSummary, null);
-	
-	// Remote status
-	var remoteSyncStatus = "";
-	if (gitStatus.ahead == 0 && gitStatus.behind == 0) {
-		remoteSyncStatus = "Local repo and remote are in sync.";
-	} else {
-		remoteSyncStatus = "Local repo out of sync: "
-	}
-
-	if (gitStatus.ahead > 0) {
-			remoteSyncStatus += gitStatus.ahead + " commits ahead.";
-	} 
-	if (gitStatus.behind > 0) {
-			remoteSyncStatus += gitStatus.behind + " commits behind.";
-	}
-
-	$tw.wiki.setText(this.git.remoteSyncStatusTiddler, null, null, remoteSyncStatus, null);
-	
-}
 
 /*
 Call git status API and return response Promise.
 */
 GitControlWidget.prototype.getGitStatus = function() {
 	return $tw.utils.httpRequestAsync({url: this.urlOf(this.git.status.resource)});
+}
+
+/*
+Execute handler for a git action and make the appropriate request to the server
+*/
+GitControlWidget.prototype.handleGitActionEvent = function(event) {
+    var self = this;
+    const action = this.gitActionName(event);
+    $tw.wiki.deleteTiddler(this.git[action].resultTiddler);
+    //$tw.wiki.setText(self.git.remoteSyncStatusTiddler, null, null, "Performing fetch from remote...", null);
+
+    // TODO: For actions like fetch, we want to execute multiple commands: Fetch to retrieve changes from remote,
+    // git log to show the remote commits that were fetched, and possibly git status. List the sequence of commands
+    // in the git config object in GitControlWidget, then here we iterate through the list of commands executing them
+    // one by one.
+    queryParams = [{raw: true}];
+
+    $tw.utils.httpRequestAsync({
+        type: "POST",
+        url: this.urlOf('git/' + action)})
+    .then(response => {
+
+        var gitCommandResponse = JSON.parse(response.data);
+        
+		self.updateSyncStatus(gitCommandResponse.commandOutput);
+		self.updateGitStatusResultTiddler(gitCommandResponse.commandOutput);
+        
+        /*if (gitFetch.logSummary) {
+            $tw.wiki.setText(self.git.fetch.resultTiddler, null, null, self.makeWikiTextCodeBlock(gitFetch.logSummary), null);
+        } else {
+            $tw.wiki.setTiddlerData(self.git.fetch.resultTiddler, gitFetch.fetchSummary, null);
+        }
+
+        // TODO: handle error
+        var gitStatus = gitFetch.statusSummary;
+        self.updateSyncStatus(gitStatus);
+        
+        this.updateGitStatusResultTiddler(gitStatus);*/
+        
+    })
+    .catch(response => self.handleGitErrorResponse(response));
+}
+
+
+GitControlWidget.prototype.handleGitErrorResponse = function(response) {
+    var error = "";
+
+    // If no 'data' object in the response, the error occurred even before executing the git action.
+    // Otherwise, an exception happened while executing the git action.
+    if (!response.data) {
+        error = "Failed to connect to server: " + response.err;
+    } else {
+        const gitError = JSON.parse(response.data);
+        error = gitError.error;
+
+        if (gitError.command == "fetch") {
+            $tw.wiki.setText(self.git.remoteSyncStatusTiddler, null, null, "Unknown. Failed to connect to remote.", null);
+        }
+    }
+
+    $tw.wiki.setText(this.git.action.errorTiddler, null, null, this.makeWikiTextCodeBlock(error), null);
 }
 
 /*
@@ -361,6 +334,104 @@ GitControlWidget.prototype.handleLoadFromDiskEvent = function(event) {
 }
 
 /*
+Update local and remote sync status
+*/
+GitControlWidget.prototype.updateSyncStatus = function(gitStatus) {
+
+	$tw.wiki.deleteTiddler(this.git.localSyncStatusTiddler);
+	$tw.wiki.deleteTiddler(this.git.remoteSyncStatusTiddler);
+
+	// Local status
+	var propertyNameSubstitution = {not_added: "new"};
+	var exclusion = "files";
+	var changes = this.filterStatuses(gitStatus, exclusion, propertyNameSubstitution, true);
+
+	var localSyncSummary = [];
+	if (this.isEmpty(changes)) {
+		localSyncSummary = "No uncommitted changes.";
+	} else {
+		for (var status in changes) {
+			localSyncSummary.push(changes[status].length + " " + status);
+		}
+		localSyncSummary = localSyncSummary.join(", ") + " files.";
+	}
+
+	$tw.wiki.setText(this.git.localSyncStatusTiddler, null, null, localSyncSummary, null);
+
+	// Remote status
+	var remoteSyncStatus = "";
+	if (gitStatus.ahead == 0 && gitStatus.behind == 0) {
+		remoteSyncStatus = "Local repo and remote are in sync.";
+	} else {
+		remoteSyncStatus = "Local repo out of sync: "
+	}
+
+	if (gitStatus.ahead > 0) {
+			remoteSyncStatus += gitStatus.ahead + " commits ahead.";
+	}
+	if (gitStatus.behind > 0) {
+			remoteSyncStatus += gitStatus.behind + " commits behind.";
+	}
+
+	$tw.wiki.setText(this.git.remoteSyncStatusTiddler, null, null, remoteSyncStatus, null);
+
+}
+
+/*
+Update git status result tiddler
+*/
+GitControlWidget.prototype.updateGitStatusResultTiddler = function(gitStatus) {
+	var exclusion = "files";
+	var statusClean = this.filterStatuses(gitStatus, exclusion, {}, false);
+	$tw.wiki.deleteTiddler(this.git.status.resultTiddler);
+	$tw.wiki.setTiddlerData(this.git.status.resultTiddler, statusClean, null);
+}
+
+/*
+Filter git status JSON response:
+*/
+GitControlWidget.prototype.filterStatuses = function(gitStatus, exclude, substitution, onlyArrays) {
+	var changes = {};
+	for (const status in gitStatus) {
+		var statusName = substitution[status] ? substitution[status] : status;
+		if (gitStatus[status] instanceof Array && gitStatus[status].length > 0 && status != exclude) {
+			changes[statusName] = gitStatus[status];
+		} else if (!onlyArrays && !(gitStatus[status] instanceof Array)) {
+			changes[statusName] = gitStatus[status];
+		}
+	}
+	return changes;
+}
+
+/*
+Take REST resource and return the full URL
+*/
+GitControlWidget.prototype.urlOf = function(resource) {
+	return $tw.syncadaptor.host + resource;
+}
+
+/*
+Wrap with text with ``` to make wiki code block
+*/
+GitControlWidget.prototype.makeWikiTextCodeBlock = function(text, type) {
+	return "\n```" + type + "\n" + text + "\n```\n";
+}
+
+/*
+Check if object is empty
+*/
+GitControlWidget.prototype.isEmpty = function(obj) {
+	return Object.keys(obj).length === 0 && obj.constructor === Object;
+}
+
+/*
+Chop 'tm-git-' off of event type to get just the git action name.
+*/
+GitControlWidget.prototype.gitActionName = function(event) {
+    return event.type.slice(7)
+}
+
+/*
 Refresh the widget by ensuring our attributes are up to date
 */
 GitControlWidget.prototype.refresh = function(changedTiddlers) {
@@ -383,3 +454,4 @@ GitControlWidget.prototype.invokeAction = function(triggeringWidget,event) {
 exports["gitcontrol"] = GitControlWidget;
 
 })();
+
