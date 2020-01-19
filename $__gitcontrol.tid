@@ -126,6 +126,16 @@ Commit status:
 	</$button>
 </$list>
 
+
+<$list filter="[title[$:/git/error]has[text]]">
+
+!!! Error <$button class="tc-btn-invisible"><$action-deletetiddler $tiddler="$:/git/error"/>{{$:/core/images/close-button}}</$button>
+
+  {{$:/git/error}}
+
+
+</$list>
+
 Git status:
 
 {{$:/git/status}}
