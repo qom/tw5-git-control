@@ -16,16 +16,21 @@ Note: This is version 0.1.0 of the git control widget. Before refactoring and si
 var Widget = require("$:/core/modules/widgets/widget.js").widget;
 
 var GitControlWidget = function(parseTreeNode,options) {
-	
+
+
+
 	// Config properties
 	this.initActions = [];
+
+	this.events = ["tm-git-status","tm-git-fetchaction","tm-git-pull","tm-git-addaction","tm-git-commit","tm-git-push","tm-git-sync","tm-git-diff"];
+
+    // TODO: Eliminate unnecessary parts of this.
 	this.git = {
-		initialAction: "fetch",
-		action: {resource: "git/action", errorTiddler: "$:/git/error"},
-		status: {resource: "git/status", resultTiddler: "$:/git/status"},
-		fetch: {resource: "git/fetch", resultTiddler: "$:/git/fetchsummary"},
+		resourceRoot: "git/",
+		action: {errorTiddler: "$:/git/error"},
+		status: {resultTiddler: "$:/git/status"},
 		pull: {resource: "git/pull", resultTiddler: "$:/git/pullsummary"},
-		add: {resource: "git/add", resultTiddler: "$:/git/addresult"},
+		//add: {resource: "git/add", resultTiddler: "$:/git/addresult"},
 		commit: {resource: "git/commit", resultTiddler: "$:/git/commitsummary"},
 		push: {resource: "git/push", resultTiddler: "$:/git/pushsummary"},
 		sync: {resource: "git/sync", resultTiddler: "$:/git/syncresult"},
@@ -33,21 +38,25 @@ var GitControlWidget = function(parseTreeNode,options) {
 	  localSyncStatusTiddler: "$:/git/localsyncstatus",
 	  remoteSyncStatusTiddler: "$:/git/remotesyncstatus"
 	}
+
+	this.complexAction = {
+		fetchaction: {commands: ['fetch', 'remotecommits','status']},
+		remotecommits: {commands: 'raw', data: {param: ['log','master..origin/master','--stat']}, resultTiddler: "$:/git/remotecommits"},
+		addaction: {commands: ['add','status']},
+		add: {commands: 'add', data: {param: '.'}}
+	}
+
 	this.filesystem = {
 		checkChanges: {resource: "filesystem/get-filesystem-tiddlers.json", query: "?filter=newOrDeleted", resultTiddler:"$:/sync/changedondisk"},
 		loadChanges: {resource: "filesystem/load-changes-from-disk"}
 	};
 
 	this.initialise(parseTreeNode,options);
+
+    // Add handlers for each git action
+	this.events.forEach(event => this.addEventListener(event, this.handleGitActionEvent));
+
 	this.addEventListeners([
-		{type: "tm-git-status", handler: "handleGitActionEvent"},
-		{type: "tm-git-fetch", handler: "handleGitActionEvent"},
-		{type: "tm-git-pull", handler: "handleGitPullEvent"},
-		{type: "tm-git-add", handler: "handleGitAddEvent"},
-		{type: "tm-git-commit", handler: "handleGitCommitEvent"},
-		{type: "tm-git-push", handler: "handleGitPushEvent"},
-		{type: "tm-git-sync", handler: "handleGitSyncEvent"},
-		{type: "tm-git-diff", handler: "handleGitDiffEvent"},
 		{type: "tm-check-changes-on-disk", handler: "handleChangesOnDiskEvent"},
 		{type: "tm-load-from-disk", handler: "handleLoadFromDiskEvent"}
   ]);
@@ -96,8 +105,6 @@ GitControlWidget.prototype.executeStartupActions = function() {
 	});
 };
 	
-
-
 /*
 Call git status API and return response Promise.
 */
@@ -105,47 +112,65 @@ GitControlWidget.prototype.getGitStatus = function() {
 	return $tw.utils.httpRequestAsync({url: this.urlOf(this.git.status.resource)});
 }
 
-/*
-Execute handler for a git action and make the appropriate request to the server
-*/
-GitControlWidget.prototype.handleGitActionEvent = function(event) {
-    var self = this;
-    const action = this.gitActionName(event);
-    $tw.wiki.deleteTiddler(this.git[action].resultTiddler);
-    //$tw.wiki.setText(self.git.remoteSyncStatusTiddler, null, null, "Performing fetch from remote...", null);
-
-    // TODO: For actions like fetch, we want to execute multiple commands: Fetch to retrieve changes from remote,
+// TODO: For actions like fetch, we want to execute multiple commands: Fetch to retrieve changes from remote,
     // git log to show the remote commits that were fetched, and possibly git status. List the sequence of commands
     // in the git config object in GitControlWidget, then here we iterate through the list of commands executing them
     // one by one.
-    queryParams = [{raw: true}];
 
-    $tw.utils.httpRequestAsync({
-        type: "POST",
-        url: this.urlOf('git/' + action)})
-    .then(response => {
+/*
+Execute handler for a git action and make the appropriate request to the server
+*/
+GitControlWidget.prototype.handleGitActionEvent = async function(event) {
+    var self = this;
+    const action = this.gitActionName(event);
+    //$tw.wiki.deleteTiddler(this.git[action].resultTiddler);
+    //$tw.wiki.setText(self.git.remoteSyncStatusTiddler, null, null, "Performing fetch from remote...", null);
 
-        var gitCommandResponse = JSON.parse(response.data);
-        
-		self.updateSyncStatus(gitCommandResponse.commandOutput);
-		self.updateGitStatusResultTiddler(gitCommandResponse.commandOutput);
-        
-        /*if (gitFetch.logSummary) {
-            $tw.wiki.setText(self.git.fetch.resultTiddler, null, null, self.makeWikiTextCodeBlock(gitFetch.logSummary), null);
+    // Check if this is a complex action with multiple git commands to execute.
+    const gitActions = this.complexAction[action] ? this.complexAction[action].commands : [action];
+
+    for (var gitAction of gitActions) {
+        var command, data, resultTiddler = null;
+        if (this.complexAction[gitAction]) {
+            command = this.complexAction[gitAction].commands;
+            data = JSON.stringify(this.complexAction[gitAction].data);
+            resultTiddler = this.complexAction[gitAction].resultTiddler;
         } else {
-            $tw.wiki.setTiddlerData(self.git.fetch.resultTiddler, gitFetch.fetchSummary, null);
+            data = null;
+            command = gitAction;
         }
 
-        // TODO: handle error
-        var gitStatus = gitFetch.statusSummary;
-        self.updateSyncStatus(gitStatus);
-        
-        this.updateGitStatusResultTiddler(gitStatus);*/
-        
-    })
-    .catch(response => self.handleGitErrorResponse(response));
+        var response = await $tw.utils.httpRequestAsync({
+                type: "POST",
+                url: this.urlOf(command),
+                data: data
+            })
+            .catch(response => self.handleGitErrorResponse(response));
+
+        var gitCommandResponse = JSON.parse(response.data);
+
+        if (resultTiddler) {
+            $tw.wiki.setText(resultTiddler, null, null, self.makeWikiTextCodeBlock(gitCommandResponse.commandOutput), null);
+        }
+
+        if (gitCommandResponse.command == 'status') {
+                self.updateSyncStatus(gitCommandResponse.commandOutput);
+                self.updateGitStatusResultTiddler(gitCommandResponse.commandOutput);
+        }
+    }
 }
 
+/*if (gitFetch.logSummary) {
+                $tw.wiki.setText(self.git.fetch.resultTiddler, null, null, self.makeWikiTextCodeBlock(gitFetch.logSummary), null);
+            } else {
+                $tw.wiki.setTiddlerData(self.git.fetch.resultTiddler, gitFetch.fetchSummary, null);
+            }
+
+            // TODO: handle error
+            var gitStatus = gitFetch.statusSummary;
+            self.updateSyncStatus(gitStatus);
+
+            this.updateGitStatusResultTiddler(gitStatus);*/
 
 GitControlWidget.prototype.handleGitErrorResponse = function(response) {
     var error = "";
@@ -159,7 +184,7 @@ GitControlWidget.prototype.handleGitErrorResponse = function(response) {
         error = gitError.error;
 
         if (gitError.command == "fetch") {
-            $tw.wiki.setText(self.git.remoteSyncStatusTiddler, null, null, "Unknown. Failed to connect to remote.", null);
+            $tw.wiki.setText(this.git.remoteSyncStatusTiddler, null, null, "Unknown. Failed to connect to remote.", null);
         }
     }
 
@@ -406,8 +431,9 @@ GitControlWidget.prototype.filterStatuses = function(gitStatus, exclude, substit
 /*
 Take REST resource and return the full URL
 */
-GitControlWidget.prototype.urlOf = function(resource) {
-	return $tw.syncadaptor.host + resource;
+GitControlWidget.prototype.urlOf = function(action, queryParams) {
+    const query = queryParams ? "?" + queryParams.join('&') : "";
+	return $tw.syncadaptor.host + this.git.resourceRoot + action + query;
 }
 
 /*

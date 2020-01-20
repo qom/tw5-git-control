@@ -11,7 +11,7 @@ version: 0.1.0
 \end
 
 \define git-fetch()
-<$button message="tm-git-fetch">
+<$button message="tm-git-fetchaction">
 		git fetch
 </$button>
 \end
@@ -23,7 +23,7 @@ version: 0.1.0
 \end
 
 \define git-add()
-<$button message="tm-git-add">
+<$button message="tm-git-addaction">
 	  git add
 </$button>
 \end
@@ -91,14 +91,14 @@ Changes on disk:
 	</$button>
 </$list>
 
-<$list filter="[title[$:/git/fetchsummary]has[text]]">
+<$list filter="[title[$:/git/remotecommits]has[text]]">
 
 Fetch summary:
 
-  {{$:/git/fetchsummary}}
+  {{$:/git/remotecommits}}
 	
 	<$button>
-	<$action-deletetiddler $tiddler="$:/git/fetchsummary"/>
+	<$action-deletetiddler $tiddler="$:/git/remotecommits"/>
 	Clear fetch summary
 	</$button>
 </$list>
