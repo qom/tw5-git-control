@@ -34,12 +34,24 @@ version: 0.1.0
 </$button>
 \end
 
+\define git-commit()
+<$button message="tm-git-commit">
+    git commit
+</$button>
+
+<$edit-text size=50 tag=input tiddler="$:/git/commitmessage" default="Enter a commit message."/>
+\end
+
+\define git-push()
+<$button message="tm-git-pushaction">
+    git push
+</$button>
+\end
+
 \define git-sync()
 <$button message="tm-git-sync">
     git sync
 </$button>
-
-<$edit-text size=50 tag=input tiddler="$:/git/commitmessage" default="Enter a commit message."/>
 \end
 
 \define check-changes-on-disk()
@@ -71,6 +83,8 @@ Sync status:
 |Pull remote repo changes |<<git-pull>> |
 |Diff modified files |<<git-diff>> |
 |Stage files for commit |<<git-add>> |
+|Commit changes |<<git-commit>> |
+|Push changes |<<git-push>> |
 |Commit and push changes |<<git-sync>> |
 |Changes on disk |<<check-changes-on-disk>> <<load-from-disk>> |
 	
@@ -115,17 +129,27 @@ Pull summary:
 	</$button>
 </$list>
 
-<$list filter="[title[$:/git/commitstatus]has[text]]">
+<$list filter="[title[$:/git/commitsummary]has[text]]">
 
-Commit status:
+Commit summary:
 
-  {{$:/git/commitstatus}}
+  {{$:/git/commitsummary}}
 	<$button>
-	<$action-deletetiddler $tiddler="$:/git/commitstatus"/>
-	Clear Commit Status
+	<$action-deletetiddler $tiddler="$:/git/commitsummary"/>
+	Clear Commit Summary
 	</$button>
 </$list>
 
+<$list filter="[title[$:/git/pushsummary]has[text]]">
+
+Push summary:
+
+  {{$:/git/pushsummary}}
+	<$button>
+	<$action-deletetiddler $tiddler="$:/git/pushsummary"/>
+	Clear Push Summary
+	</$button>
+</$list>
 
 <$list filter="[title[$:/git/error]has[text]]">
 

@@ -22,7 +22,7 @@ var GitControlWidget = function(parseTreeNode,options) {
 	// Config properties
 	this.initActions = [];
 
-	this.events = ["tm-git-status","tm-git-fetchaction","tm-git-pull","tm-git-addaction","tm-git-commit","tm-git-push","tm-git-sync","tm-git-diff"];
+	this.events = ["tm-git-status","tm-git-fetchaction","tm-git-pull","tm-git-addaction","tm-git-commit","tm-git-pushaction","tm-git-sync","tm-git-diff"];
 
     // TODO: Eliminate unnecessary parts of this.
 	this.git = {
@@ -39,11 +39,17 @@ var GitControlWidget = function(parseTreeNode,options) {
 	  remoteSyncStatusTiddler: "$:/git/remotesyncstatus"
 	}
 
+	this.basicAction = {
+		add: {command: 'add', data: {param: '.'}},
+		commit: {command: 'commit', data: {param: null} , sourceTiddler: "$:/git/commitmessage", resultTiddler: "$:/git/commitsummary"},
+		push: {command: 'push', data: {param: ["origin", "master"]}},
+		remotecommits: {command: 'raw', data: {param: ['log','master..origin/master','--stat']}, resultTiddler: "$:/git/remotecommits"},
+	}
+
 	this.complexAction = {
 		fetchaction: {commands: ['fetch', 'remotecommits','status']},
-		remotecommits: {commands: 'raw', data: {param: ['log','master..origin/master','--stat']}, resultTiddler: "$:/git/remotecommits"},
 		addaction: {commands: ['add','status']},
-		add: {commands: 'add', data: {param: '.'}}
+		pushaction: {commands: ['push','status']},
 	}
 
 	this.filesystem = {
@@ -112,11 +118,6 @@ GitControlWidget.prototype.getGitStatus = function() {
 	return $tw.utils.httpRequestAsync({url: this.urlOf(this.git.status.resource)});
 }
 
-// TODO: For actions like fetch, we want to execute multiple commands: Fetch to retrieve changes from remote,
-    // git log to show the remote commits that were fetched, and possibly git status. List the sequence of commands
-    // in the git config object in GitControlWidget, then here we iterate through the list of commands executing them
-    // one by one.
-
 /*
 Execute handler for a git action and make the appropriate request to the server
 */
@@ -131,10 +132,18 @@ GitControlWidget.prototype.handleGitActionEvent = async function(event) {
 
     for (var gitAction of gitActions) {
         var command, data, resultTiddler = null;
-        if (this.complexAction[gitAction]) {
-            command = this.complexAction[gitAction].commands;
-            data = JSON.stringify(this.complexAction[gitAction].data);
-            resultTiddler = this.complexAction[gitAction].resultTiddler;
+        if (this.basicAction[gitAction]) {
+            command = this.basicAction[gitAction].command;
+            // Read user input from source tiddler and put in request data. Used to get user commit message.
+            if (this.basicAction[gitAction].sourceTiddler) {
+                var paramData = $tw.wiki.getTiddlerText(this.basicAction[gitAction].sourceTiddler);
+                var requestData = this.basicAction[gitAction].data;
+                requestData.param = paramData;
+                data = JSON.stringify(requestData);
+            } else {
+                data = JSON.stringify(this.basicAction[gitAction].data);
+            }
+            resultTiddler = this.basicAction[gitAction].resultTiddler;
         } else {
             data = null;
             command = gitAction;
@@ -150,7 +159,8 @@ GitControlWidget.prototype.handleGitActionEvent = async function(event) {
         var gitCommandResponse = JSON.parse(response.data);
 
         if (resultTiddler) {
-            $tw.wiki.setText(resultTiddler, null, null, self.makeWikiTextCodeBlock(gitCommandResponse.commandOutput), null);
+            //$tw.wiki.setText(resultTiddler, null, null, self.makeWikiTextCodeBlock(gitCommandResponse.commandOutput), null);
+		    $tw.wiki.setTiddlerData(resultTiddler, gitCommandResponse.commandOutput, null);
         }
 
         if (gitCommandResponse.command == 'status') {
