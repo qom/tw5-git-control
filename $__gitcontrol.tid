@@ -4,6 +4,7 @@ title: $:/gitcontrol
 type: text/vnd.tiddlywiki
 version: 0.1.0
 
+
 \define git-status()
 <$button message="tm-git-status">
 		git status
@@ -16,8 +17,14 @@ version: 0.1.0
 </$button>
 \end
 
+\define git-merge()
+<$button message="tm-git-mergeaction">
+		git merge
+</$button>
+\end
+
 \define git-pull()
-<$button message="tm-git-pull">
+<$button message="tm-git-pullaction">
 		git pull
 </$button>
 \end
@@ -80,6 +87,7 @@ Sync status:
 
 |Update git status |<<git-status>> |
 |Fetch remote repo metadata |<<git-fetch>> |
+|Merge remote changes |<<git-merge>> (Not working yet)|
 |Pull remote repo changes |<<git-pull>> |
 |Diff modified files |<<git-diff>> |
 |Stage files for commit |<<git-add>> |
@@ -87,7 +95,7 @@ Sync status:
 |Push changes |<<git-push>> |
 |Commit and push changes |<<git-sync>> |
 |Changes on disk |<<check-changes-on-disk>> <<load-from-disk>> |
-	
+
 </$gitcontrol>
 
 ----
@@ -96,48 +104,44 @@ Sync status:
 
 <$list filter="[title[$:/sync/changedondisk]has[text]]">
 
-Changes on disk:
+!!! Changes on disk <$button class="tc-btn-invisible"><$action-deletetiddler $tiddler="$:/sync/changedondisk"/>{{$:/core/images/close-button}}</$button>
 
   {{$:/sync/changedondisk}}
-	<$button>
-	<$action-deletetiddler $tiddler="$:/sync/changedondisk"/>
-	Clear changes on disk
-	</$button>
 </$list>
 
 <$list filter="[title[$:/git/remotecommits]has[text]]">
 
-Fetch summary:
+!!! Fetch summary: <$button class="tc-btn-invisible"><$action-deletetiddler $tiddler="$:/git/remotecommits"/>{{$:/core/images/close-button}}</$button>
 
   {{$:/git/remotecommits}}
-	
+
 	<$button>
 	<$action-deletetiddler $tiddler="$:/git/remotecommits"/>
 	Clear fetch summary
 	</$button>
 </$list>
 
+<$list filter="[title[$:/git/mergesummary]has[text]]">
+
+!!! Merge summary <$button class="tc-btn-invisible"><$action-deletetiddler $tiddler="$:/git/mergesummary"/>{{$:/core/images/close-button}}</$button>
+
+  {{$:/git/mergesummary}}
+
+</$list>
+
 <$list filter="[title[$:/git/pullsummary]has[text]]">
 
-Pull summary:
+!!! Pull summary <$button class="tc-btn-invisible"><$action-deletetiddler $tiddler="$:/git/pullsummary"/>{{$:/core/images/close-button}}</$button>
 
   {{$:/git/pullsummary}}
-	
-	<$button>
-	<$action-deletetiddler $tiddler="$:/git/pullsummary"/>
-	Clear pull summary
-	</$button>
+
 </$list>
 
 <$list filter="[title[$:/git/commitsummary]has[text]]">
 
-Commit summary:
+!!! Commit summary <$button class="tc-btn-invisible"><$action-deletetiddler $tiddler="$:/git/commitsummary"/>{{$:/core/images/close-button}}</$button>
 
   {{$:/git/commitsummary}}
-	<$button>
-	<$action-deletetiddler $tiddler="$:/git/commitsummary"/>
-	Clear Commit Summary
-	</$button>
 </$list>
 
 <$list filter="[title[$:/git/pushsummary]has[text]]">
@@ -171,8 +175,8 @@ Diffs:
 <$button>
 	<$action-deletetiddler $tiddler="$:/git/diffresult"/>
 	Clear Diff
-</$button>	
+</$button>
 
 {{$:/git/diffresult}}
-	
+
 </$list>
