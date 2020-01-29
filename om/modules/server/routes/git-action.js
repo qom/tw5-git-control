@@ -28,6 +28,10 @@ exports.handler = function(request,response,state) {
 	// state.params is populated with contents of the capture group in the exports.path regex
     const action = state.params[0];
 	var result = {command: action};
+    if (action == "raw") {
+        result.outputType = "string";
+    }
+
 	var actionParam = null;
 	if (state.data) {
 	    var requestData = JSON.parse(state.data);
