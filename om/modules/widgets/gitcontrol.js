@@ -17,22 +17,20 @@ var Widget = require("$:/core/modules/widgets/widget.js").widget;
 
 var GitControlWidget = function(parseTreeNode,options) {
 
-
-
 	// Config properties
 	this.initActions = [];
 
-	this.events = ["tm-git-status","tm-git-fetchaction","tm-git-pull","tm-git-addaction","tm-git-commit","tm-git-pushaction","tm-git-sync","tm-git-diff"];
+	this.events = ["tm-git-status","tm-git-fetchaction","tm-git-mergeaction","tm-git-pullaction","tm-git-addaction","tm-git-commit","tm-git-pushaction","tm-git-sync","tm-git-diff"];
 
     // TODO: Eliminate unnecessary parts of this.
 	this.git = {
 		resourceRoot: "git/",
 		action: {errorTiddler: "$:/git/error"},
 		status: {resultTiddler: "$:/git/status"},
-		pull: {resource: "git/pull", resultTiddler: "$:/git/pullsummary"},
+		//pull: {resource: "git/pull", resultTiddler: "$:/git/pullsummary"},
 		//add: {resource: "git/add", resultTiddler: "$:/git/addresult"},
 		commit: {resource: "git/commit", resultTiddler: "$:/git/commitsummary"},
-		push: {resource: "git/push", resultTiddler: "$:/git/pushsummary"},
+		//push: {resource: "git/push", resultTiddler: "$:/git/pushsummary"},
 		sync: {resource: "git/sync", resultTiddler: "$:/git/syncresult"},
 		diff: {resource: "git/diff", resultTiddler: "$:/git/diffresult"},
 	  localSyncStatusTiddler: "$:/git/localsyncstatus",
@@ -40,6 +38,7 @@ var GitControlWidget = function(parseTreeNode,options) {
 	}
 
 	this.basicAction = {
+	    pull: {command: 'pull', resultTiddler: "$:/git/pullsummary"},
 		add: {command: 'add', data: {param: '.'}},
 		commit: {command: 'commit', data: {param: null} , sourceTiddler: "$:/git/commitmessage", resultTiddler: "$:/git/commitsummary"},
 		push: {command: 'push', data: {param: ["origin", "master"]}},
@@ -48,8 +47,10 @@ var GitControlWidget = function(parseTreeNode,options) {
 
 	this.complexAction = {
 		fetchaction: {commands: ['fetch', 'remotecommits','status']},
+		pullaction: {commands: ['pull', 'status']},
+		mergeaction: {commands: ['merge', 'status']},
 		addaction: {commands: ['add','status']},
-		pushaction: {commands: ['push','status']},
+		pushaction: {commands: ['push','status']}
 	}
 
 	this.filesystem = {
@@ -159,8 +160,11 @@ GitControlWidget.prototype.handleGitActionEvent = async function(event) {
         var gitCommandResponse = JSON.parse(response.data);
 
         if (resultTiddler) {
-            //$tw.wiki.setText(resultTiddler, null, null, self.makeWikiTextCodeBlock(gitCommandResponse.commandOutput), null);
-		    $tw.wiki.setTiddlerData(resultTiddler, gitCommandResponse.commandOutput, null);
+            if (gitCommandResponse.outputType == "string") {
+                $tw.wiki.setText(resultTiddler, null, null, self.makeWikiTextCodeBlock(gitCommandResponse.commandOutput), null);
+            } else {
+    		    $tw.wiki.setTiddlerData(resultTiddler, gitCommandResponse.commandOutput, null);
+    		}
         }
 
         if (gitCommandResponse.command == 'status') {
@@ -345,7 +349,8 @@ GitControlWidget.prototype.handleGitDiffEvent = function(event) {
 
 GitControlWidget.prototype.handleChangesOnDiskEvent = function(event) {
 	var self = this;
-	$tw.utils.httpRequestAsync({url: this.urlOf(this.filesystem.checkChanges.resource + this.filesystem.checkChanges.query)})
+	var resourceUrl = $tw.syncadaptor.host + this.filesystem.checkChanges.resource + this.filesystem.checkChanges.query;
+	$tw.utils.httpRequestAsync({url: resourceUrl})
 		.then(response => {
 		
 			var filesOnDisk = JSON.parse(response.data);
@@ -356,7 +361,8 @@ GitControlWidget.prototype.handleChangesOnDiskEvent = function(event) {
 
 GitControlWidget.prototype.handleLoadFromDiskEvent = function(event) {
 	var self = this;
-	$tw.utils.httpRequestAsync({url: this.urlOf(this.filesystem.loadChanges.resource)})
+	var resourceUrl = $tw.syncadaptor.host + this.filesystem.loadChanges.resource;
+	$tw.utils.httpRequestAsync({url: resourceUrl})
 		.then(response => {
 		
 			var changeResult = JSON.parse(response.data);
