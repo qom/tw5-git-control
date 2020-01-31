@@ -27,8 +27,6 @@ var GitControlWidget = function(parseTreeNode,options) {
 		resourceRoot: "git/",
 		action: {errorTiddler: "$:/git/error"},
 		status: {resultTiddler: "$:/git/status"},
-		//pull: {resource: "git/pull", resultTiddler: "$:/git/pullsummary"},
-		//add: {resource: "git/add", resultTiddler: "$:/git/addresult"},
 		commit: {resource: "git/commit", resultTiddler: "$:/git/commitsummary"},
 		//push: {resource: "git/push", resultTiddler: "$:/git/pushsummary"},
 		sync: {resource: "git/sync", resultTiddler: "$:/git/syncresult"},
@@ -174,17 +172,6 @@ GitControlWidget.prototype.handleGitActionEvent = async function(event) {
     }
 }
 
-/*if (gitFetch.logSummary) {
-                $tw.wiki.setText(self.git.fetch.resultTiddler, null, null, self.makeWikiTextCodeBlock(gitFetch.logSummary), null);
-            } else {
-                $tw.wiki.setTiddlerData(self.git.fetch.resultTiddler, gitFetch.fetchSummary, null);
-            }
-
-            // TODO: handle error
-            var gitStatus = gitFetch.statusSummary;
-            self.updateSyncStatus(gitStatus);
-
-            this.updateGitStatusResultTiddler(gitStatus);*/
 
 GitControlWidget.prototype.handleGitErrorResponse = function(response) {
     var error = "";
@@ -225,81 +212,6 @@ GitControlWidget.prototype.handleGitStatusEvent = function(event) {
 	});
 }
 
-/*
-Handle the tm-git-fetch widget message
-*/
-GitControlWidget.prototype.handleGitFetchEvent = function(event) {
-	var self = this;
-	$tw.wiki.deleteTiddler(this.git.fetch.resultTiddler);
-	$tw.wiki.setText(self.git.remoteSyncStatusTiddler, null, null, "Performing fetch from remote...", null);
-	
-	$tw.utils.httpRequestAsync({url: this.urlOf(this.git.fetch.resource),})
-	.then(response => {
-
-		var gitFetch = JSON.parse(response.data);
-		if (gitFetch.logSummary) {
-			$tw.wiki.setText(self.git.fetch.resultTiddler, null, null, self.makeWikiTextCodeBlock(gitFetch.logSummary), null);
-		} else {
-			$tw.wiki.setTiddlerData(self.git.fetch.resultTiddler, gitFetch.fetchSummary, null);
-		}
-
-		// TODO: handle error
-		var gitStatus = gitFetch.statusSummary;
-		self.updateSyncStatus(gitStatus);
-		
-		this.updateGitStatusResultTiddler(gitStatus);
-		
-	})
-	.catch(response => {
-		var error = response.data ? response.data : "Failed to connect to server: " + response.err;
-		$tw.wiki.setText(self.git.fetch.resultTiddler, null, null, self.makeWikiTextCodeBlock(error), null);
-		$tw.wiki.setText(self.git.remoteSyncStatusTiddler, null, null, "Unknown. Failed to connect to remote.", null);
-	});
-}
-
-/*
-Handle the tm-git-pull widget message
-*/
-GitControlWidget.prototype.handleGitPullEvent = function(event) {
-	var self = this;
-	$tw.wiki.deleteTiddler(this.git.pull.resultTiddler);
-	
-	$tw.utils.httpRequestAsync({url: this.urlOf(this.git.pull.resource)})
-		.then(response => {
-			var gitPull = JSON.parse(response.data);
-			$tw.wiki.setTiddlerData(self.git.pull.resultTiddler, gitPull, null);
-		})
-		.catch(response => {
-			var error = response.data ? response.data : "Failed to connect to server: " + response.err;
-			$tw.wiki.setText(self.git.pull.resultTiddler, null, null, self.makeWikiTextCodeBlock(error), null);
-		});
-}
-	
-/*
-Handle the tm-git-add widget message
-*/
-GitControlWidget.prototype.handleGitAddEvent = function(event) {
-	var self = this;
-	$tw.wiki.deleteTiddler(this.git.add.resultTiddler);
-	
-	$tw.utils.httpRequestAsync({url: this.urlOf(this.git.add.resource)})
-		.then(response => {
-		
-			var gitAdd = JSON.parse(response.data);
-
-			// TODO: handle error
-			var gitStatus = gitAdd.statusSummary;
-			self.updateSyncStatus(gitStatus);
-
-			this.updateGitStatusResultTiddler(gitStatus);
-		
-	})
-	.catch(response => {
-			var error = response.data ? response.data : "Failed to connect to server: " + response.err;
-			$tw.wiki.setText(self.git.add.resultTiddler, null, null, self.makeWikiTextCodeBlock(error), null);
-	});
-}
-	
 /*
 Handle the tm-git-sync widget message
 */
