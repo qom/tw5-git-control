@@ -126,6 +126,7 @@ Execute handler for a git action and make the appropriate request to the server
 GitControlWidget.prototype.handleGitActionEvent = async function(event) {
     var self = this;
     const action = this.gitActionName(event);
+    var progress = "";
     //$tw.wiki.deleteTiddler(this.git[action].resultTiddler);
     //$tw.wiki.setText(self.git.remoteSyncStatusTiddler, null, null, "Performing fetch from remote...", null);
 
@@ -164,7 +165,7 @@ GitControlWidget.prototype.handleGitActionEvent = async function(event) {
 
         var gitCommandResponse = JSON.parse(response.data);
 
-        if (resultTiddler) {
+        if (resultTiddler && gitCommandResponse.commandOutput != null) {
             if (gitCommandResponse.outputType == "string") {
                 $tw.wiki.setText(resultTiddler, null, null, self.makeWikiTextCodeBlock(gitCommandResponse.commandOutput), null);
             } else {
@@ -178,8 +179,9 @@ GitControlWidget.prototype.handleGitActionEvent = async function(event) {
         }
 
         // Show the action has completed in the UI
-        $tw.wiki.setText(this.git.action.progressTiddler, null, null, "Executing git " + gitAction + "...complete.", null);
-        this.clearProgress();
+        progress += "Executing git " + gitAction + "...complete.<br/>";
+        $tw.wiki.setText(this.git.action.progressTiddler, null, null,progress, null);
+        this.clearProgress(5000);
     }
 }
 
@@ -329,10 +331,10 @@ GitControlWidget.prototype.urlOf = function(action, queryParams) {
 /*
 Delete progress tiddler after delay
 */
-GitControlWidget.prototype.clearProgress = async function() {
+GitControlWidget.prototype.clearProgress = async function(delayMs) {
     setTimeout(() => {
         $tw.wiki.deleteTiddler(this.git.action.progressTiddler);
-    }, 2000)
+    }, delayMs)
 }
 
 /*
