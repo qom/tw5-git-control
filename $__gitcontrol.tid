@@ -42,7 +42,7 @@ version: 0.1.0
 \end
 
 \define git-commit()
-<$button message="tm-git-commit">
+<$button message="tm-git-commitaction">
     git commit
 </$button>
 

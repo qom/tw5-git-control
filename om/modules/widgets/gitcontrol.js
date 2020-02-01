@@ -21,7 +21,7 @@ var GitControlWidget = function(parseTreeNode,options) {
 	this.initActions = [];
 
     // For now git diff is handled separately
-	this.events = ["tm-git-status","tm-git-fetchaction","tm-git-mergeaction","tm-git-pullaction","tm-git-addaction","tm-git-commit","tm-git-pushaction","tm-git-syncaction"];
+	this.events = ["tm-git-status","tm-git-fetchaction","tm-git-mergeaction","tm-git-pullaction","tm-git-addaction","tm-git-commitaction","tm-git-pushaction","tm-git-syncaction"];
 
     // TODO: Eliminate unnecessary parts of this.
 	this.git = {
@@ -46,6 +46,7 @@ var GitControlWidget = function(parseTreeNode,options) {
 		pullaction: {commands: ['pull', 'status']},
 		mergeaction: {commands: ['merge', 'status']},
 		addaction: {commands: ['add','status']},
+		commitaction: {commands: ['commit', 'status']},
 		pushaction: {commands: ['push','status']},
 		syncaction: {commands: ['commit','push','status']}
 	}
