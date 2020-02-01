@@ -178,7 +178,7 @@ GitControlWidget.prototype.handleGitActionEvent = async function(event) {
         }
 
         // Show the action has completed in the UI
-        $tw.wiki.setText(this.git.action.progressTiddler, null, null, "Executing git" + gitAction + "...complete.", null);
+        $tw.wiki.setText(this.git.action.progressTiddler, null, null, "Executing git " + gitAction + "...complete.", null);
         this.clearProgress();
     }
 }
