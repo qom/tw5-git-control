@@ -20,7 +20,8 @@ var GitControlWidget = function(parseTreeNode,options) {
 	// Config properties
 	this.initActions = [];
 
-	this.events = ["tm-git-status","tm-git-fetchaction","tm-git-mergeaction","tm-git-pullaction","tm-git-addaction","tm-git-commit","tm-git-pushaction","tm-git-syncaction","tm-git-diff"];
+    // For now git diff is handled separately
+	this.events = ["tm-git-status","tm-git-fetchaction","tm-git-mergeaction","tm-git-pullaction","tm-git-addaction","tm-git-commit","tm-git-pushaction","tm-git-syncaction"];
 
     // TODO: Eliminate unnecessary parts of this.
 	this.git = {
@@ -58,6 +59,9 @@ var GitControlWidget = function(parseTreeNode,options) {
 
     // Add handlers for each git action
 	this.events.forEach(event => this.addEventListener(event, this.handleGitActionEvent));
+
+	// Git diff has a separate handler for now
+	this.addEventListener("tm-git-diff", this.handleGitDiffEvent);
 
 	this.addEventListeners([
 		{type: "tm-check-changes-on-disk", handler: "handleChangesOnDiskEvent"},
@@ -130,7 +134,10 @@ GitControlWidget.prototype.handleGitActionEvent = async function(event) {
 
     for (var gitAction of gitActions) {
         var command, data, resultTiddler = null;
+
+        // Show the action has started in the UI
         $tw.wiki.setText(this.git.action.progressTiddler, null, null, "Executing " + gitAction + "...", null);
+
         if (this.basicAction[gitAction]) {
             command = this.basicAction[gitAction].command;
             // Read user input from source tiddler and put in request data. Used to get user commit message.
@@ -170,7 +177,9 @@ GitControlWidget.prototype.handleGitActionEvent = async function(event) {
                 self.updateGitStatusResultTiddler(gitCommandResponse.commandOutput);
         }
 
-        $tw.wiki.deleteTiddler(this.git.action.progressTiddler);
+        // Show the action has completed in the UI
+        $tw.wiki.setText(this.git.action.progressTiddler, null, null, "Executing git" + gitAction + "...complete.", null);
+        this.clearProgress();
     }
 }
 
@@ -196,7 +205,8 @@ GitControlWidget.prototype.handleGitErrorResponse = function(response) {
 
 GitControlWidget.prototype.handleGitDiffEvent = function(event) {
 	var self = this;
-	$tw.utils.httpRequestAsync({url: this.urlOf(this.git.diff.resource)})
+    const action = this.gitActionName(event);
+	$tw.utils.httpRequestAsync({url: this.urlOf(action)})
 	.then(response => {
 		
 		var gitDiff = JSON.parse(response.data);
@@ -314,6 +324,15 @@ Take REST resource and return the full URL
 GitControlWidget.prototype.urlOf = function(action, queryParams) {
     const query = queryParams ? "?" + queryParams.join('&') : "";
 	return $tw.syncadaptor.host + this.git.resourceRoot + action + query;
+}
+
+/*
+Delete progress tiddler after delay
+*/
+GitControlWidget.prototype.clearProgress = async function() {
+    setTimeout(() => {
+        $tw.wiki.deleteTiddler(this.git.action.progressTiddler);
+    }, 2000)
 }
 
 /*

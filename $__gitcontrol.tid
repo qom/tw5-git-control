@@ -144,24 +144,11 @@ Sync status:
   {{$:/git/commitsummary}}
 </$list>
 
-<$list filter="[title[$:/git/pushsummary]has[text]]">
-
-Push summary:
-
-  {{$:/git/pushsummary}}
-	<$button>
-	<$action-deletetiddler $tiddler="$:/git/pushsummary"/>
-	Clear Push Summary
-	</$button>
-</$list>
-
 <$list filter="[title[$:/git/error]has[text]]">
 
 !!! Error <$button class="tc-btn-invisible"><$action-deletetiddler $tiddler="$:/git/error"/>{{$:/core/images/close-button}}</$button>
 
   {{$:/git/error}}
-
-
 </$list>
 
 Git status:
@@ -170,12 +157,7 @@ Git status:
 
 <$list filter="[title[$:/git/diffresult]has[text]]">
 
-Diffs:
-
-<$button>
-	<$action-deletetiddler $tiddler="$:/git/diffresult"/>
-	Clear Diff
-</$button>
+!!! Diffs <$button class="tc-btn-invisible"><$action-deletetiddler $tiddler="$:/git/diffresult"/>{{$:/core/images/close-button}}</$button>
 
 {{$:/git/diffresult}}
 
