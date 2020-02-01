@@ -20,22 +20,19 @@ var GitControlWidget = function(parseTreeNode,options) {
 	// Config properties
 	this.initActions = [];
 
-	this.events = ["tm-git-status","tm-git-fetchaction","tm-git-mergeaction","tm-git-pullaction","tm-git-addaction","tm-git-commit","tm-git-pushaction","tm-git-sync","tm-git-diff"];
+	this.events = ["tm-git-status","tm-git-fetchaction","tm-git-mergeaction","tm-git-pullaction","tm-git-addaction","tm-git-commit","tm-git-pushaction","tm-git-syncaction","tm-git-diff"];
 
     // TODO: Eliminate unnecessary parts of this.
 	this.git = {
 		resourceRoot: "git/",
-		action: {errorTiddler: "$:/git/error"},
-		status: {resultTiddler: "$:/git/status"},
-		commit: {resource: "git/commit", resultTiddler: "$:/git/commitsummary"},
-		//push: {resource: "git/push", resultTiddler: "$:/git/pushsummary"},
-		sync: {resource: "git/sync", resultTiddler: "$:/git/syncresult"},
+		action: {errorTiddler: "$:/git/error", progressTiddler: "$:/git/progress"},
 		diff: {resource: "git/diff", resultTiddler: "$:/git/diffresult"},
 	  localSyncStatusTiddler: "$:/git/localsyncstatus",
 	  remoteSyncStatusTiddler: "$:/git/remotesyncstatus"
 	}
 
 	this.basicAction = {
+	    status: {command: 'status', resultTiddler: "$:/git/status"},
 	    pull: {command: 'pull', resultTiddler: "$:/git/pullsummary"},
 		add: {command: 'add', data: {param: '.'}},
 		commit: {command: 'commit', data: {param: null} , sourceTiddler: "$:/git/commitmessage", resultTiddler: "$:/git/commitsummary"},
@@ -48,7 +45,8 @@ var GitControlWidget = function(parseTreeNode,options) {
 		pullaction: {commands: ['pull', 'status']},
 		mergeaction: {commands: ['merge', 'status']},
 		addaction: {commands: ['add','status']},
-		pushaction: {commands: ['push','status']}
+		pushaction: {commands: ['push','status']},
+		syncaction: {commands: ['commit','push','status']}
 	}
 
 	this.filesystem = {
@@ -113,9 +111,10 @@ GitControlWidget.prototype.executeStartupActions = function() {
 /*
 Call git status API and return response Promise.
 */
+/*
 GitControlWidget.prototype.getGitStatus = function() {
 	return $tw.utils.httpRequestAsync({url: this.urlOf(this.git.status.resource)});
-}
+}*/
 
 /*
 Execute handler for a git action and make the appropriate request to the server
@@ -131,6 +130,7 @@ GitControlWidget.prototype.handleGitActionEvent = async function(event) {
 
     for (var gitAction of gitActions) {
         var command, data, resultTiddler = null;
+        $tw.wiki.setText(this.git.action.progressTiddler, null, null, "Executing " + gitAction + "...", null);
         if (this.basicAction[gitAction]) {
             command = this.basicAction[gitAction].command;
             // Read user input from source tiddler and put in request data. Used to get user commit message.
@@ -169,6 +169,8 @@ GitControlWidget.prototype.handleGitActionEvent = async function(event) {
                 self.updateSyncStatus(gitCommandResponse.commandOutput);
                 self.updateGitStatusResultTiddler(gitCommandResponse.commandOutput);
         }
+
+        $tw.wiki.deleteTiddler(this.git.action.progressTiddler);
     }
 }
 
@@ -190,56 +192,6 @@ GitControlWidget.prototype.handleGitErrorResponse = function(response) {
     }
 
     $tw.wiki.setText(this.git.action.errorTiddler, null, null, this.makeWikiTextCodeBlock(error), null);
-}
-
-/*
-Handle the tm-git-status widget message
-*/
-GitControlWidget.prototype.handleGitStatusEvent = function(event) {
-	var self = this;
-	this.getGitStatus()
-	.then(response => {
-
-		var gitStatus = JSON.parse(response.data);
-		self.updateSyncStatus(gitStatus.statusSummary);
-		
-		this.updateGitStatusResultTiddler(gitStatus.statusSummary);
-		
-	})
-	.catch(response => {
-		var error = response.data ? response.data : "Failed to connect to server: " + response.err;
-		$tw.wiki.setText(self.git.status.resultTiddler, null, null, self.makeWikiTextCodeBlock(error), null);
-	});
-}
-
-/*
-Handle the tm-git-sync widget message
-*/
-GitControlWidget.prototype.handleGitSyncEvent = function(event) {
-	var self = this;
-	var commitmessage = $tw.wiki.getTiddlerText("$:/git/commitmessage");
-	$tw.utils.httpRequestAsync({
-		url: this.urlOf(this.git.sync.resource),
-		type: "POST",
-		data: commitmessage
-	})
-	.then(response => {
-            
-		var syncResult = JSON.parse(response.data);
-		$tw.wiki.setTiddlerData(self.git.commit.resultTiddler, syncResult.commitSummary, null);
-		$tw.wiki.setTiddlerData(self.git.push.resultTiddler, syncResult.pushSummary, null);
-
-		// TODO: handle error
-		var gitStatus = syncResult.statusSummary;
-		self.updateSyncStatus(gitStatus);
-
-		this.updateGitStatusResultTiddler(gitStatus);
-		
-	})
-	.catch(response => {
-		var error = response.data ? response.data : "Failed to connect to server: " + response.err;
-		$tw.wiki.setText(self.git.sync.resultTiddler, null, null, self.makeWikiTextCodeBlock(error), null);
-	});
 }
 
 GitControlWidget.prototype.handleGitDiffEvent = function(event) {
@@ -336,8 +288,8 @@ Update git status result tiddler
 GitControlWidget.prototype.updateGitStatusResultTiddler = function(gitStatus) {
 	var exclusion = "files";
 	var statusClean = this.filterStatuses(gitStatus, exclusion, {}, false);
-	$tw.wiki.deleteTiddler(this.git.status.resultTiddler);
-	$tw.wiki.setTiddlerData(this.git.status.resultTiddler, statusClean, null);
+	$tw.wiki.deleteTiddler(this.basicAction.status.resultTiddler);
+	$tw.wiki.setTiddlerData(this.basicAction.status.resultTiddler, statusClean, null);
 }
 
 /*
@@ -365,7 +317,7 @@ GitControlWidget.prototype.urlOf = function(action, queryParams) {
 }
 
 /*
-Wrap with text with ``` to make wiki code block
+Wrap text with ``` to make wiki code block
 */
 GitControlWidget.prototype.makeWikiTextCodeBlock = function(text, type) {
 	return "\n```" + type + "\n" + text + "\n```\n";

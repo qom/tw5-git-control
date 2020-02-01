@@ -56,7 +56,7 @@ version: 0.1.0
 \end
 
 \define git-sync()
-<$button message="tm-git-sync">
+<$button message="tm-git-syncaction">
     git sync
 </$button>
 \end
@@ -100,6 +100,10 @@ Sync status:
 
 ----
 
+<$list filter="[title[$:/git/progress]has[text]]">
+  {{$:/git/progress}}
+</$list>
+
 <!-- Display section for output of git and load from disk actions -->
 
 <$list filter="[title[$:/sync/changedondisk]has[text]]">
@@ -115,10 +119,6 @@ Sync status:
 
   {{$:/git/remotecommits}}
 
-	<$button>
-	<$action-deletetiddler $tiddler="$:/git/remotecommits"/>
-	Clear fetch summary
-	</$button>
 </$list>
 
 <$list filter="[title[$:/git/mergesummary]has[text]]">
