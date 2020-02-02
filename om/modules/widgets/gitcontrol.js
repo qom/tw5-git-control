@@ -62,9 +62,8 @@ var GitControlWidget = function(parseTreeNode,options) {
 	this.events.forEach(event => this.addEventListener(event, this.handleGitActionEvent));
 
 	// Git diff has a separate handler for now
-	this.addEventListener("tm-git-diff", this.handleGitDiffEvent);
-
 	this.addEventListeners([
+	    {type: "tm-git-diff", handler: this.handleGitDiffEvent},
 		{type: "tm-check-changes-on-disk", handler: "handleChangesOnDiskEvent"},
 		{type: "tm-load-from-disk", handler: "handleLoadFromDiskEvent"}
   ]);
@@ -114,22 +113,12 @@ GitControlWidget.prototype.executeStartupActions = function() {
 };
 	
 /*
-Call git status API and return response Promise.
-*/
-/*
-GitControlWidget.prototype.getGitStatus = function() {
-	return $tw.utils.httpRequestAsync({url: this.urlOf(this.git.status.resource)});
-}*/
-
-/*
 Execute handler for a git action and make the appropriate request to the server
 */
 GitControlWidget.prototype.handleGitActionEvent = async function(event) {
     var self = this;
     const action = this.gitActionName(event);
-    var progress = "";
-    //$tw.wiki.deleteTiddler(this.git[action].resultTiddler);
-    //$tw.wiki.setText(self.git.remoteSyncStatusTiddler, null, null, "Performing fetch from remote...", null);
+    var progressMessage = "";
 
     // Check if this is a complex action with multiple git commands to execute.
     const gitActions = this.complexAction[action] ? this.complexAction[action].commands : [action];
@@ -137,9 +126,10 @@ GitControlWidget.prototype.handleGitActionEvent = async function(event) {
     for (var gitAction of gitActions) {
         var command, data, resultTiddler = null;
 
-        // Show the action has started in the UI
+        // Show that the action has started in the UI
         $tw.wiki.setText(this.git.action.progressTiddler, null, null, "Executing " + gitAction + "...", null);
 
+        // TODO: Simplify or factor out into a separate method
         if (this.basicAction[gitAction]) {
             command = this.basicAction[gitAction].command;
             // Read user input from source tiddler and put in request data. Used to get user commit message.
@@ -157,6 +147,7 @@ GitControlWidget.prototype.handleGitActionEvent = async function(event) {
             command = gitAction;
         }
 
+        // Make HTTP request
         var response = await $tw.utils.httpRequestAsync({
                 type: "POST",
                 url: this.urlOf(command),
@@ -166,6 +157,7 @@ GitControlWidget.prototype.handleGitActionEvent = async function(event) {
 
         var gitCommandResponse = JSON.parse(response.data);
 
+        // Show response output in gitcontrol UI
         if (resultTiddler && gitCommandResponse.commandOutput != null) {
             if (gitCommandResponse.outputType == "string") {
                 $tw.wiki.setText(resultTiddler, null, null, self.makeWikiTextCodeBlock(gitCommandResponse.commandOutput), null);
@@ -174,14 +166,15 @@ GitControlWidget.prototype.handleGitActionEvent = async function(event) {
     		}
         }
 
+        // Update sync status summary
         if (gitCommandResponse.command == 'status') {
                 self.updateSyncStatus(gitCommandResponse.commandOutput);
                 self.updateGitStatusResultTiddler(gitCommandResponse.commandOutput);
         }
 
         // Show the action has completed in the UI
-        progress += "Executing git " + gitAction + "...complete.<br/>";
-        $tw.wiki.setText(this.git.action.progressTiddler, null, null,progress, null);
+        progressMessage += "Executing git " + gitAction + "...complete.<br/>";
+        $tw.wiki.setText(this.git.action.progressTiddler, null, null,progressMessage, null);
         this.clearProgress(5000);
     }
 }

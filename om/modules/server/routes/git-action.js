@@ -32,6 +32,7 @@ exports.handler = function(request,response,state) {
         result.outputType = "string";
     }
 
+    // Get parameters for the git action, if any were supplied
 	var actionParam = null;
 	if (state.data) {
 	    var requestData = JSON.parse(state.data);
@@ -58,22 +59,3 @@ exports.handler = function(request,response,state) {
 
 }());
 
-/*
-	git.fetch()
-		.then(data => {
-			result['fetchSummary'] = data;
-			return git.raw(['log','master..origin/master','--stat']);
-		})
-        .then(data => {
-            result['logSummary'] = data;
-            return git.status();
-        })
-		.then(data => {
-			result['statusSummary'] = data;
-			response.end(JSON.stringify(result), "utf8")
-		})
-		.catch(error => {
-			response.writeHead(500, {"Content-Type": "application/json"});
-			response.end(JSON.stringify({error: error.message}), "utf8");
-		});
-		*/
