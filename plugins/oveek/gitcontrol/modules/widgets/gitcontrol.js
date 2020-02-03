@@ -1,5 +1,5 @@
 /*\
-title: $:/om/modules/widgets/gitcontrol.js
+title: $:/plugins/oveek/gitcontrol/modules/widgets/gitcontrol.js
 type: application/javascript
 module-type: widget
 

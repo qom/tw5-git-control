@@ -1,6 +1,6 @@
 {
-	"title": "$:/plugins/om/git-control",
+	"title": "$:/plugins/oveek/gitcontrol",
 	"name": "GitControl",
-	"description": "Perform git actions in tiddler directory on node server.",
+	"description": "Perform git actions on tiddler directory hosted on node server.",
 	"list": "readme"
 }

@@ -1,5 +1,5 @@
 /*\
-title: $:/om/modules/server/routes/git-action.js
+title: $:/plugins/oveek/gitcontrol/modules/server/routes/git-action.js
 type: application/javascript
 module-type: route
 

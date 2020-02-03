@@ -3,7 +3,7 @@ created: 20141106223056035
 description: {{$:/language/Buttons/SaveWiki/Hint}}
 modified: 20191230013021640
 tags: $:/tags/PageControls meta
-title: $:/om/ui/Buttons/gitcontrol
+title: $:/plugins/oveek/gitcontrol/ui/Buttons/gitcontrol
 type: text/vnd.tiddlywiki
 
 <$button tooltip={{$:/om/language/Buttons/GitCommit/Hint}} aria-label={{$:/om/language/Buttons/GitCommit/Caption}} class=<<tv-config-toolbar-class>> to="$:/gitcontrol">
