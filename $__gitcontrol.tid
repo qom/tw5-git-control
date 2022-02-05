@@ -35,6 +35,19 @@ version: 0.1.0
 </$button>
 \end
 
+\define git-selective-add()
+<$button message="tm-git-show-selectiveadd-ui-action">
+	  select files to add
+</$button>
+\end
+
+\define ui-list-item(title)
+<div style="tc-manager-list-item">
+<$checkbox class="gitadd-listitem" tiddler="$:/git/selectedforadd" index="$title$" checked="selected" unchecked=""/>
+		$title$
+</div>
+\end
+
 \define git-diff()
 <$button message="tm-git-diff">
 	  git diff
@@ -90,7 +103,7 @@ Sync status:
 |Merge remote changes |<<git-merge>> (Not working yet)|
 |Pull remote repo changes |<<git-pull>> |
 |Diff modified files |<<git-diff>> |
-|Stage files for commit |<<git-add>> |
+|Stage files for commit |<<git-add>> <<git-selective-add>>|
 |Commit changes |<<git-commit>> |
 |Push changes |<<git-push>> |
 |Commit and push changes |<<git-sync>> |
@@ -98,11 +111,20 @@ Sync status:
 
 </$gitcontrol>
 
-----
-
 <$list filter="[title[$:/git/progress]has[text]]">
   {{$:/git/progress}}
 </$list>
+
+<br>
+
+<$list filter="[title[$:/git/selectiveaddui]has[text]]">
+
+!!! __Files to Include In Commit__ <$button class="tc-btn-invisible"><$action-deletetiddler $filter="[[$:/git/selectedforadd]] [[$:/git/selectiveaddui]]"/>{{$:/core/images/close-button}}</$button>
+
+  {{$:/git/selectiveaddui}}
+</$list>
+
+----
 
 <!-- Display section for output of git and load from disk actions -->
 
