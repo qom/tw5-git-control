@@ -23,10 +23,24 @@ var GitControlWidget = function(parseTreeNode,options) {
     // For now git diff is handled separately
 	this.events = ["tm-git-status","tm-git-fetchaction","tm-git-mergeaction","tm-git-pullaction","tm-git-addaction","tm-git-commitaction","tm-git-pushaction","tm-git-syncaction"];
 
+    this.gitControl = {
+        selectiveAddUi: {macroTemplate: "<<ui-list-item titleplaceholder>>", uiTiddler: "$:/git/selectiveaddui"}
+    }
+
+    var selectedFileJsonToList = (selectedFilesJson => {
+        var selectedList = [];
+        Object.entries(JSON.parse(selectedFilesJson)).forEach(([fileName, selected]) => {
+            if (selected == "selected") {
+                selectedList.push(fileName);
+            }
+        });
+        return selectedList;
+    });
+
     // TODO: Eliminate unnecessary parts of this.
 	this.git = {
 		resourceRoot: "git/",
-		action: {errorTiddler: "$:/git/error", progressTiddler: "$:/git/progress"},
+		action: {errorTiddler: "$:/git/error", progressTiddler: "$:/git/progress"} ,
 		diff: {resource: "git/diff", resultTiddler: "$:/git/diffresult"},
 	  localSyncStatusTiddler: "$:/git/localsyncstatus",
 	  remoteSyncStatusTiddler: "$:/git/remotesyncstatus"
@@ -35,7 +49,7 @@ var GitControlWidget = function(parseTreeNode,options) {
 	this.basicAction = {
 	    status: {command: 'status', resultTiddler: "$:/git/status"},
 	    pull: {command: 'pull', resultTiddler: "$:/git/pullsummary"},
-		add: {command: 'add', data: {param: '.'}},
+		add: {command: 'add', data: {param: './tiddlers'}, sourceTiddler: "$:/git/selectedforadd", sourceTiddlerParser: selectedFileJsonToList},
 		commit: {command: 'commit', data: {param: null} , sourceTiddler: "$:/git/commitmessage", resultTiddler: "$:/git/commitsummary"},
 		push: {command: 'push', data: {param: ["origin", "master"]}},
 		remotecommits: {command: 'raw', data: {param: ['log','master..origin/master','--stat']}, resultTiddler: "$:/git/remotecommits"},
@@ -63,6 +77,7 @@ var GitControlWidget = function(parseTreeNode,options) {
 
 	// Git diff has a separate handler for now
 	this.addEventListeners([
+		{type: "tm-git-show-selectiveadd-ui-action", handler: this.handleShowGitSelectiveAddUi},
 	    {type: "tm-git-diff", handler: this.handleGitDiffEvent},
 		{type: "tm-check-changes-on-disk", handler: "handleChangesOnDiskEvent"},
 		{type: "tm-load-from-disk", handler: "handleLoadFromDiskEvent"}
@@ -132,11 +147,17 @@ GitControlWidget.prototype.handleGitActionEvent = async function(event) {
         // TODO: Simplify or factor out into a separate method
         if (this.basicAction[gitAction]) {
             command = this.basicAction[gitAction].command;
-            // Read user input from source tiddler and put in request data. Used to get user commit message.
+            // Read user input from source tiddler and put in request data.
+            // Used to get user commit message, or files selected by user to include in the commit.
             if (this.basicAction[gitAction].sourceTiddler) {
-                var paramData = $tw.wiki.getTiddlerText(this.basicAction[gitAction].sourceTiddler);
                 var requestData = this.basicAction[gitAction].data;
-                requestData.param = paramData;
+                var paramData = $tw.wiki.getTiddlerText(this.basicAction[gitAction].sourceTiddler);
+                if (paramData != undefined) {
+                    if (this.basicAction[gitAction].sourceTiddlerParser) {
+                        paramData = this.basicAction[gitAction].sourceTiddlerParser(paramData);
+                    }
+                    requestData.param = paramData;
+                }
                 data = JSON.stringify(requestData);
             } else {
                 data = JSON.stringify(this.basicAction[gitAction].data);
@@ -199,6 +220,45 @@ GitControlWidget.prototype.handleGitErrorResponse = function(response) {
     $tw.wiki.setText(this.git.action.errorTiddler, null, null, this.makeWikiTextCodeBlock(error), null);
 }
 
+GitControlWidget.prototype.handleShowGitSelectiveAddUi = function(event) {
+
+    var listItemMacroTemplate = this.gitControl.selectiveAddUi.macroTemplate;
+    var selectionUi = "";
+    var inSystemTiddlerSection = false;
+
+    var statusTiddlerText = $tw.wiki.getTiddlerText(this.basicAction.status.resultTiddler);
+    var statusJson = JSON.parse(statusTiddlerText);
+
+    Object.entries(statusJson).forEach(([gitStatusChangeInfoType, value]) => {
+        // In the git status json new files are in an array called "not_added", and modified files are in an array called "modified".
+        if (value instanceof Array) {
+            selectionUi += "__" + gitStatusChangeInfoType + "__<br>";
+
+            value.forEach(tiddlerTitle => {
+
+                // Hide system tiddlers with html5 <details> tag (tiddlers have to be sorted so that all the _system tiddlers are sequential)
+                if (!inSystemTiddlerSection && tiddlerTitle.includes("tiddlers\/_system")) {
+                    selectionUi += "<details><summary>system tiddlers</summary>";
+                    inSystemTiddlerSection = true;
+                }
+
+                selectionUi += listItemMacroTemplate.replace("titleplaceholder", '"' + tiddlerTitle.replace(/"/g,"") + '"')
+
+            });
+
+            // Close the system tiddlers section
+            if (inSystemTiddlerSection) {
+                inSystemTiddlerSection = false;
+                selectionUi += "</details>";
+            }
+            selectionUi += "<br>";
+        }
+    })
+
+    $tw.wiki.setText(this.gitControl.selectiveAddUi.uiTiddler, null, null, selectionUi, null);
+
+}
+
 GitControlWidget.prototype.handleGitDiffEvent = function(event) {
 	var self = this;
     const action = this.gitActionName(event);
@@ -214,7 +274,7 @@ GitControlWidget.prototype.handleGitDiffEvent = function(event) {
 		
 		$tw.wiki.setText(self.git.diff.resultTiddler, null, null, combinedDiff, null);
 		
-	})
+	}).catch(response => self.handleGitErrorResponse(response));
 }
 
 GitControlWidget.prototype.handleChangesOnDiskEvent = function(event) {
