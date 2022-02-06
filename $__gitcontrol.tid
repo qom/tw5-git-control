@@ -5,38 +5,39 @@ type: text/vnd.tiddlywiki
 version: 0.1.0
 
 
+
 \define git-status()
-<$button message="tm-git-status">
+<$button class="gitcontrol-btn-boxed" tooltip="Update git status" message="tm-git-status">
 		git status
 </$button>
 \end
 
 \define git-fetch()
-<$button message="tm-git-fetchaction">
+<$button class="gitcontrol-btn-boxed" tooltip="Fetch remote repo metadata" message="tm-git-fetchaction">
 		git fetch
 </$button>
 \end
 
 \define git-merge()
-<$button message="tm-git-mergeaction">
+<$button class="gitcontrol-btn-boxed" tooltip="Merge remote changes" message="tm-git-mergeaction">
 		git merge
 </$button>
 \end
 
 \define git-pull()
-<$button message="tm-git-pullaction">
+<$button class="gitcontrol-btn-boxed" tooltip="Pull remote repo changes" message="tm-git-pullaction">
 		git pull
 </$button>
 \end
 
 \define git-add()
-<$button message="tm-git-addaction">
+<$button class="gitcontrol-btn-boxed" tooltip="Stage files for commit" message="tm-git-addaction">
 	  git add
 </$button>
 \end
 
 \define git-selective-add()
-<$button message="tm-git-show-selectiveadd-ui-action">
+<$button class="gitcontrol-btn-boxed" tooltip="Select files to include in commit" message="tm-git-show-selectiveadd-ui-action">
 	  select files to add
 </$button>
 \end
@@ -49,13 +50,13 @@ version: 0.1.0
 \end
 
 \define git-diff()
-<$button message="tm-git-diff">
+<$button class="gitcontrol-btn-boxed" tooltip="Diff modified files" message="tm-git-diff">
 	  git diff
 </$button>
 \end
 
 \define git-commit()
-<$button message="tm-git-commitaction">
+<$button class="gitcontrol-btn-boxed" tooltip="Commit changes" message="tm-git-commitaction">
     git commit
 </$button>
 
@@ -63,25 +64,25 @@ version: 0.1.0
 \end
 
 \define git-push()
-<$button message="tm-git-pushaction">
+<$button class="gitcontrol-btn-boxed" tooltip="Push changes to remote" message="tm-git-pushaction">
     git push
 </$button>
 \end
 
 \define git-sync()
-<$button message="tm-git-syncaction">
+<$button class="gitcontrol-btn-boxed" tooltip="Commit and push changes to remote" message="tm-git-syncaction">
     git sync
 </$button>
 \end
 
 \define check-changes-on-disk()
-<$button message="tm-check-changes-on-disk">
+<$button class="gitcontrol-btn-boxed" tooltip="Check for new or modified tiddlers on disk"message="tm-check-changes-on-disk">
     check changes on disk
 </$button>
 \end
 
 \define load-from-disk()
-<$button message="tm-load-from-disk">
+<$button class="gitcontrol-btn-boxed" tooltip="Load new or modified tiddlers from disk" message="tm-load-from-disk">
     load from disk
 </$button>
 \end
@@ -90,41 +91,43 @@ version: 0.1.0
 
 Sync status:
 
-|! Local |{{$:/git/localsyncstatus}} |
-|! Remote |{{$:/git/remotesyncstatus}} |
-
-----
-
-<!--<$gitcontrol initactions="fetch,status">-->
 <$gitcontrol initactions="status">
 
-|Update git status |<<git-status>> |
-|Fetch remote repo metadata |<<git-fetch>> |
-|Merge remote changes |<<git-merge>> (Not working yet)|
-|Pull remote repo changes |<<git-pull>> |
-|Diff modified files |<<git-diff>> |
-|Stage files for commit |<<git-add>> <<git-selective-add>>|
-|Commit changes |<<git-commit>> |
-|Push changes |<<git-push>> |
-|Commit and push changes |<<git-sync>> |
-|Changes on disk |<<check-changes-on-disk>> <<load-from-disk>> |
+|gitcontrol|k
+|! Remote |{{$:/git/remotesyncstatus}} | <<git-status>> |
+|! Local  |{{$:/git/localsyncstatus}} |~|
+
+
+<!--<$gitcontrol initactions="fetch,status">-->
+
+
+|gitcontrol|k
+|! Remote |<<git-fetch>> <<git-merge>> <<git-pull>> |
+|~|<<git-push>> <<git-sync>> |
+
+|gitcontrol|k
+|! Local &nbsp;&nbsp; |<<git-add>> <<git-selective-add>> <<git-diff>>|
+|~|<<git-commit>> |
+|~|<<check-changes-on-disk>> <<load-from-disk>> |
 
 </$gitcontrol>
 
+<br>
+
 <$list filter="[title[$:/git/progress]has[text]]">
-  {{$:/git/progress}}
+
+'' {{$:/git/progress}} ''
+
 </$list>
 
 <br>
 
 <$list filter="[title[$:/git/selectiveaddui]has[text]]">
 
-!!! __Files to Include In Commit__ <$button class="tc-btn-invisible"><$action-deletetiddler $filter="[[$:/git/selectedforadd]] [[$:/git/selectiveaddui]]"/>{{$:/core/images/close-button}}</$button>
+!!! <$button class="tc-btn-invisible"><$action-deletetiddler $filter="[[$:/git/selectedforadd]] [[$:/git/selectiveaddui]]"/>{{$:/core/images/close-button}}</$button> __Files to Include In Commit__
 
   {{$:/git/selectiveaddui}}
 </$list>
-
-----
 
 <!-- Display section for output of git and load from disk actions -->
 
@@ -137,7 +140,7 @@ Sync status:
 
 <$list filter="[title[$:/git/remotecommits]has[text]]">
 
-!!! Fetch summary: <$button class="tc-btn-invisible"><$action-deletetiddler $tiddler="$:/git/remotecommits"/>{{$:/core/images/close-button}}</$button>
+!!! <$button class="tc-btn-invisible"><$action-deletetiddler $tiddler="$:/git/remotecommits"/>{{$:/core/images/close-button}}</$button> Fetch summary
 
   {{$:/git/remotecommits}}
 
@@ -145,7 +148,7 @@ Sync status:
 
 <$list filter="[title[$:/git/mergesummary]has[text]]">
 
-!!! Merge summary <$button class="tc-btn-invisible"><$action-deletetiddler $tiddler="$:/git/mergesummary"/>{{$:/core/images/close-button}}</$button>
+!!! <$button class="tc-btn-invisible"><$action-deletetiddler $tiddler="$:/git/mergesummary"/>{{$:/core/images/close-button}}</$button> Merge summary
 
   {{$:/git/mergesummary}}
 
@@ -153,7 +156,7 @@ Sync status:
 
 <$list filter="[title[$:/git/pullsummary]has[text]]">
 
-!!! Pull summary <$button class="tc-btn-invisible"><$action-deletetiddler $tiddler="$:/git/pullsummary"/>{{$:/core/images/close-button}}</$button>
+!!! <$button class="tc-btn-invisible"><$action-deletetiddler $tiddler="$:/git/pullsummary"/>{{$:/core/images/close-button}}</$button> Pull summary
 
   {{$:/git/pullsummary}}
 
@@ -161,25 +164,28 @@ Sync status:
 
 <$list filter="[title[$:/git/commitsummary]has[text]]">
 
-!!! Commit summary <$button class="tc-btn-invisible"><$action-deletetiddler $tiddler="$:/git/commitsummary"/>{{$:/core/images/close-button}}</$button>
+!!! <$button class="tc-btn-invisible"><$action-deletetiddler $tiddler="$:/git/commitsummary"/>{{$:/core/images/close-button}}</$button> Commit summary
 
   {{$:/git/commitsummary}}
 </$list>
 
 <$list filter="[title[$:/git/error]has[text]]">
 
-!!! Error <$button class="tc-btn-invisible"><$action-deletetiddler $tiddler="$:/git/error"/>{{$:/core/images/close-button}}</$button>
+!!! <$button class="tc-btn-invisible"><$action-deletetiddler $tiddler="$:/git/error"/>{{$:/core/images/close-button}}</$button> Error
 
   {{$:/git/error}}
 </$list>
 
-Git status:
+<$list filter="[title[$:/git/status]!field:gitcontrol-show[false]]">
+
+<$button class="tc-btn-invisible"><$action-setfield $tiddler="$:/git/status" $field="gitcontrol-show" $value="false"/>{{$:/core/images/close-button}}</$button> Git status
 
 {{$:/git/status}}
+</$list>
 
 <$list filter="[title[$:/git/diffresult]has[text]]">
 
-!!! Diffs <$button class="tc-btn-invisible"><$action-deletetiddler $tiddler="$:/git/diffresult"/>{{$:/core/images/close-button}}</$button>
+!!! <$button class="tc-btn-invisible"><$action-deletetiddler $tiddler="$:/git/diffresult"/>{{$:/core/images/close-button}}</$button> Diffs
 
 {{$:/git/diffresult}}
 
