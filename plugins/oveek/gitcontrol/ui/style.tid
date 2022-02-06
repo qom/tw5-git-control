@@ -1,0 +1,39 @@
+created: 20200322153745386
+modified: 20220206160848302
+tags: $:/tags/Stylesheet
+title: $:/plugins/oveek/gitcontrol/ui/style
+tmap.id: b7dd6816-9a7a-434a-969c-b7f76c322cdd
+type: text/vnd.tiddlywiki
+
+.gitadd-listitem {
+	display:inline-block;
+}
+
+.gitadd-listitem:hover { background: rgb(255, 201, 102); color: rgb(38, 38, 38); }
+
+//.tc-manager-list-item-heading { display: block; width: 100%; text-align: left; border-bottom: 1px solid rgb(255, 255, 255); padding: 3px; }
+
+//.tc-manager-list-item-heading-selected { font-weight: bold; color: rgb(38, 38, 38); fill: rgb(38, 38, 38); background-color: rgb(179, 179, 179); }
+
+.gitcontrol hr {
+  height: 1px;
+	border: none;
+	margin-top: 2rem;
+	margin-bottom: 2rem;
+	background-color: rgb(255, 201, 102);
+}
+
+.gitcontrol-btn-boxed {
+		font-variant: small-caps;
+		padding: 0.3em;
+    margin: 1px;
+		color: #a6b3b9
+    background: #3f3f3f;
+    border: 1px solid rgb(164, 137, 89);
+    border-radius: 0.25em;
+}
+
+table.gitcontrol, table.gitcontrol th, table.gitcontrol td {
+	border: hidden;
+	padding: 5px 7px 0px 7px;
+}
