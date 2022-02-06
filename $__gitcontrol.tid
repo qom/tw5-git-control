@@ -133,14 +133,14 @@ Sync status:
 
 <$list filter="[title[$:/sync/changedondisk]has[text]]">
 
-!!! Changes on disk <$button class="tc-btn-invisible"><$action-deletetiddler $tiddler="$:/sync/changedondisk"/>{{$:/core/images/close-button}}</$button>
+!!! <$button class="tc-btn-invisible"><$action-deletetiddler $tiddler="$:/sync/changedondisk"/>{{$:/core/images/close-button}}</$button> Changes on Disk
 
   {{$:/sync/changedondisk}}
 </$list>
 
 <$list filter="[title[$:/git/remotecommits]has[text]]">
 
-!!! <$button class="tc-btn-invisible"><$action-deletetiddler $tiddler="$:/git/remotecommits"/>{{$:/core/images/close-button}}</$button> Fetch summary
+!!! <$button class="tc-btn-invisible"><$action-deletetiddler $tiddler="$:/git/remotecommits"/>{{$:/core/images/close-button}}</$button> Fetch Summary
 
   {{$:/git/remotecommits}}
 
@@ -148,7 +148,7 @@ Sync status:
 
 <$list filter="[title[$:/git/mergesummary]has[text]]">
 
-!!! <$button class="tc-btn-invisible"><$action-deletetiddler $tiddler="$:/git/mergesummary"/>{{$:/core/images/close-button}}</$button> Merge summary
+!!! <$button class="tc-btn-invisible"><$action-deletetiddler $tiddler="$:/git/mergesummary"/>{{$:/core/images/close-button}}</$button> Merge Summary
 
   {{$:/git/mergesummary}}
 
@@ -156,7 +156,7 @@ Sync status:
 
 <$list filter="[title[$:/git/pullsummary]has[text]]">
 
-!!! <$button class="tc-btn-invisible"><$action-deletetiddler $tiddler="$:/git/pullsummary"/>{{$:/core/images/close-button}}</$button> Pull summary
+!!! <$button class="tc-btn-invisible"><$action-deletetiddler $tiddler="$:/git/pullsummary"/>{{$:/core/images/close-button}}</$button> Pull Summary
 
   {{$:/git/pullsummary}}
 
@@ -164,7 +164,7 @@ Sync status:
 
 <$list filter="[title[$:/git/commitsummary]has[text]]">
 
-!!! <$button class="tc-btn-invisible"><$action-deletetiddler $tiddler="$:/git/commitsummary"/>{{$:/core/images/close-button}}</$button> Commit summary
+!!! <$button class="tc-btn-invisible"><$action-deletetiddler $tiddler="$:/git/commitsummary"/>{{$:/core/images/close-button}}</$button> Commit Summary
 
   {{$:/git/commitsummary}}
 </$list>
@@ -178,7 +178,7 @@ Sync status:
 
 <$list filter="[title[$:/git/status]!field:gitcontrol-show[false]]">
 
-<$button class="tc-btn-invisible"><$action-setfield $tiddler="$:/git/status" $field="gitcontrol-show" $value="false"/>{{$:/core/images/close-button}}</$button> Git status
+<$button class="tc-btn-invisible"><$action-setfield $tiddler="$:/git/status" $field="gitcontrol-show" $value="false"/>{{$:/core/images/close-button}}</$button> Git Status
 
 {{$:/git/status}}
 </$list>
