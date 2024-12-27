@@ -14,6 +14,8 @@ Note: This is version 0.1.0 of the git control widget. Before refactoring and si
 "use strict";
 
 var Widget = require("$:/core/modules/widgets/widget.js").widget;
+var httpUtils = require("$:/plugins/om/gitcontrol/modules/utils/httpasync.js");
+
 
 var GitControlWidget = function(parseTreeNode,options) {
 
@@ -169,9 +171,10 @@ GitControlWidget.prototype.handleGitActionEvent = async function(event) {
         }
 
         // Make HTTP request
-        var response = await $tw.utils.httpRequestAsync({
+        var response = await httpUtils.httpRequestAsync({
                 type: "POST",
                 url: this.urlOf(command),
+				headers: {"X-requested-with": "TiddlyWiki"},
                 data: data
             })
             .catch(response => self.handleGitErrorResponse(response));
@@ -262,7 +265,7 @@ GitControlWidget.prototype.handleShowGitSelectiveAddUi = function(event) {
 GitControlWidget.prototype.handleGitDiffEvent = function(event) {
 	var self = this;
     const action = this.gitActionName(event);
-	$tw.utils.httpRequestAsync({url: this.urlOf(action)})
+	httpUtils.httpRequestAsync({url: this.urlOf(action)})
 	.then(response => {
 		
 		var gitDiff = JSON.parse(response.data);
@@ -280,7 +283,7 @@ GitControlWidget.prototype.handleGitDiffEvent = function(event) {
 GitControlWidget.prototype.handleChangesOnDiskEvent = function(event) {
 	var self = this;
 	var resourceUrl = $tw.syncadaptor.host + this.filesystem.checkChanges.resource + this.filesystem.checkChanges.query;
-	$tw.utils.httpRequestAsync({url: resourceUrl})
+	httpUtils.httpRequestAsync({url: resourceUrl})
 		.then(response => {
 		
 			var filesOnDisk = JSON.parse(response.data);
@@ -292,7 +295,7 @@ GitControlWidget.prototype.handleChangesOnDiskEvent = function(event) {
 GitControlWidget.prototype.handleLoadFromDiskEvent = function(event) {
 	var self = this;
 	var resourceUrl = $tw.syncadaptor.host + this.filesystem.loadChanges.resource;
-	$tw.utils.httpRequestAsync({url: resourceUrl})
+	httpUtils.httpRequestAsync({url: resourceUrl})
 		.then(response => {
 		
 			var changeResult = JSON.parse(response.data);

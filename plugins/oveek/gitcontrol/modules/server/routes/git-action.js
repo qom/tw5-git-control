@@ -14,9 +14,8 @@ action may be status, fetch, pull.
 /*global $tw: false */
 "use strict";
 	
-const simpleGit = require('simple-git/promise');
+const simpleGit = require('simple-git');
 const git = simpleGit("./");
-
 
 exports.method = "POST";
 

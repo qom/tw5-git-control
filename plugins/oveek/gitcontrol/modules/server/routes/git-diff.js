@@ -12,7 +12,7 @@ GET /git/sync
 /*global $tw: false */
 "use strict";
 	
-const simpleGit = require('simple-git/promise');
+const simpleGit = require('simple-git');
 const git = simpleGit();
 
 
